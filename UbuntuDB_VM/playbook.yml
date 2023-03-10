@@ -1,0 +1,29 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+  - name: Ensure chrony (for time synchronization) is installed.
+    apt:
+      name: chrony
+      state: present
+
+  - name: Ensure chrony is running.
+    service:
+      name: chronyd
+      state: started
+      enabled: yes
+
+  - name: Install mariadb
+    apt: 
+      name: mariadb-server
+      state: present
+      update_cache: true
+
+  - name: Allow port 3306
+    ufw:
+      rule: allow
+      port: "3306"
+      proto: tcp
+
+

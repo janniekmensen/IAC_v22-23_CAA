@@ -1,0 +1,40 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+  - name: Ensure chrony (for time synchronization) is installed.
+    apt:
+      name: chrony
+      state: present
+
+  - name: Ensure chrony is running.
+    service:
+      name: chronyd
+      state: started
+      enabled: yes
+
+  - name: Install apache
+    apt: 
+      name: apache2
+      state: present
+      update_cache: true
+
+  - name: Install PHP
+    apt:
+      name: php
+      state: present
+      update_cache: true
+      
+  - name: Allow port 80
+    ufw:
+      rule: allow
+      port: http
+      proto: tcp
+
+  - name: Allow port 443
+    ufw:
+      rule: allow
+      port: https
+      proto: tcp
+
