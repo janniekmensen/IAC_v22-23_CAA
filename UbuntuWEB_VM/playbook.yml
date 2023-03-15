@@ -1,6 +1,8 @@
 ---
 - hosts: all
   become: yes
+  vars_files:
+    - vars/default.yml
 
   tasks:
   - name: Ensure chrony (for time synchronization) is installed.
@@ -26,6 +28,13 @@
       state: present
       update_cache: true
       
+  - name: Install php-mysql
+    apt:
+      name: php-mysql
+      state: present
+      update_cache: true
+    notify: Reload Apache
+    
   - name: Allow port 80
     ufw:
       rule: allow
@@ -38,3 +47,31 @@
       port: https
       proto: tcp
 
+  - name: Create document root
+    file:
+      path: "/var/www/{{ hostname }}"
+      state: directory
+      owner: "vagrant"
+      mode: '0755'
+  
+  - name: Remove index.html
+    file:
+      path: "/var/www/html/index.html"
+      state: absent
+  
+  - name: Set up index.php
+    template:
+      src: "files/index.php"
+      dest: "/var/www/html/index.php"
+
+  - name: Set up Apache virtualhost
+    template:
+      src: "files/apache.conf.j2"
+      dest: "/etc/apache2/sites-available/000=default.conf"
+    notify: Reload Apache
+
+  handlers:
+    - name: Reload Apache
+      service:
+        name: apache2
+        state: reloaded

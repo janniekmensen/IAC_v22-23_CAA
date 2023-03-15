@@ -1,0 +1,5 @@
+---
+app_user: "vagrant"
+hostname: "WEB01"
+http_port: "80"
+disable_default: true
