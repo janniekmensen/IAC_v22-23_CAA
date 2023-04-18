@@ -1,0 +1,70 @@
+---
+- hosts: all
+  become: yes
+  vars_files:
+    - vars/default.yml
+
+  tasks:
+  - name: Ensure chrony (for time synchronization) is installed.
+    apt:
+      name: chrony
+      state: present
+
+  - name: Ensure chrony is running.
+    service:
+      name: chronyd
+      state: started
+      enabled: yes
+
+  - name: Install apache
+    apt: 
+      name: apache2
+      state: present
+      update_cache: true
+
+  - name: Install PHP
+    apt:
+      name: php
+      state: present
+      update_cache: true
+      
+  - name: Install php-mysql
+    apt:
+      name: php-mysql
+      state: present
+      update_cache: true
+    notify: Reload Apache
+    
+  - name: Allow port 80
+    ufw:
+      rule: allow
+      port: http
+      proto: tcp
+
+  - name: Allow port 443
+    ufw:
+      rule: allow
+      port: https
+      proto: tcp
+  
+  - name: Remove index.html
+    file:
+      path: "/var/www/html/index.html"
+      state: absent
+  
+  - name: Set up index.php
+    template:
+      src: "files/index.php"
+      dest: "/var/www/html/index.php"
+
+  - name: Set up Apache virtualhost
+    template:
+      src: "files/apache.conf.j2"
+      dest: "/etc/apache2/sites-available/000=default.conf"
+    notify: Reload Apache
+
+  handlers:
+    - name: Reload Apache
+      service:
+        name: apache2
+        state: reloaded

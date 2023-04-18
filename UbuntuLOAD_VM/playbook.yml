@@ -1,0 +1,51 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+  - name: Ensure chrony (for time synchronization) is installed.
+    apt:
+      name: chrony
+      state: present
+
+  - name: Ensure chrony is running.
+    service:
+      name: chronyd
+      state: started
+      enabled: yes
+
+  - name: Install haproxy
+    apt: 
+      name: haproxy
+      state: present
+      update_cache: true
+
+  - name: Allow port 80
+    ufw:
+      rule: allow
+      port: http
+      proto: tcp
+
+  - name: Allow port 443
+    ufw:
+      rule: allow
+      port: https
+      proto: tcp      
+
+  - name: Generate HAproxy config file
+    template:
+      src: files/haproxy.cfg
+      dest: /etc/haproxy/haproxy.cfg
+    notify:
+      - Restart HAproxy
+
+  - name: Start HAproxy service
+    service:
+      name: haproxy
+      state: started
+ 
+  handlers:
+  - name: Restart HAproxy
+    service:
+      name: haproxy
+      state: restarted

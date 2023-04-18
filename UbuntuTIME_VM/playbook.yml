@@ -1,0 +1,59 @@
+---
+- name: Initialize ntp server
+  hosts: all
+  become: yes
+
+  vars:
+    username: janniek
+    password: moieem
+
+  handlers:
+    - name: reload ntp
+      service:
+        name: ntp
+        state: restarted
+
+  tasks:
+  - name: Add user
+    user:
+      name: "{{ username }}"
+      password: "{{ password | password_hash('sha512') }}"
+      shell: /bin/bash
+      createhome: yes
+
+  - name: Grant sudo privileges to new user
+    lineinfile:
+      dest: /etc/sudoers
+      line: "{{ username }} ALL=(ALL) NOPASSWD:ALL"
+      validate: visudo -cf %s
+      state: present
+      regexp: "^{{ username }}\\s+ALL"
+
+  - name: Install ntp
+    apt: 
+      name: ntp
+      state: present
+      update_cache: true
+
+  - name: Start ntp
+    service:
+      name: ntp
+      state: started
+      enabled: yes
+  
+  - name: Configure ntp
+    lineinfile:
+      dest: /etc/ntpsec/ntp.conf
+      regexp: "^server"
+      line: "	  server 0.nl.pool.ntp.org
+	              server 1.nl.pool.ntp.org
+	              server 2.nl.pool.ntp.org
+	              server 3.nl.pool.ntp.org"
+      state: present
+      insertafter: "^# Specify one or more NTP servers."
+    notify: 
+    - reload ntp
+
+
+
+
